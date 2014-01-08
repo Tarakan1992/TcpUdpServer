@@ -2,7 +2,7 @@
 {
 	using System.Net.Sockets;
 
-	public class TcpClient
+	public class TcpClient: IClient
 	{
 		private readonly Socket _clientSocket;
 

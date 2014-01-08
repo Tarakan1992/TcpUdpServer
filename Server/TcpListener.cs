@@ -4,10 +4,11 @@
 	using System.Net;
 	using System.Net.Sockets;
 
-	public class TcpListener
+	public class TcpListener: IManager
 	{
 		private readonly IPEndPoint _endPoint;
 		private readonly Socket _listener;
+		private const string _managerType = "TCP";
 
 		public TcpListener(string ipAddress, int port)
 		{
@@ -32,6 +33,21 @@
 		{
 			_listener.Close();
 			_listener.Shutdown(SocketShutdown.Both);
+		}
+
+		public Socket ServerSocket
+		{
+			get { return _listener; }
+		}
+
+		public IClient GetClient()
+		{
+			return new TcpClient(GetSocket());
+		}
+
+		public string ManagerType
+		{
+			get { return _managerType; }
 		}
 	}
 }

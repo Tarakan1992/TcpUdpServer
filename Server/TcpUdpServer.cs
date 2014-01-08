@@ -1,7 +1,9 @@
 ﻿namespace Server
 {
 	using System;
+	using System.Collections.Generic;
 	using System.IO;
+	using System.Linq;
 	using System.Net;
 	using System.Net.Sockets;
 	using System.Text;
@@ -9,40 +11,68 @@
 
 	public class TcpUdpServer
 	{
-		private readonly TcpListener _listener;
-		private readonly UdpManager _udpManager;
+		private readonly List<IManager> _managers;
+
 
 		public TcpUdpServer(string ipAddress, int port)
 		{
-			_udpManager = new UdpManager(ipAddress, port);
+			_managers = new List<IManager>();
+			_managers.Add(new UdpManager(ipAddress, port));
+			_managers.Add(new TcpListener(ipAddress, port));
 			ListenForClients();
 		}
 
 		private void ListenForClients()
 		{
-			_udpManager.Start();
-
-			EndPoint _endPoint = new IPEndPoint(0,0);
-
-			while (true)
+			foreach (var manager in _managers)
 			{
-				byte[] bytes = new byte[10];
+				manager.Start();
+			}
 
-				var bytesRead = _udpManager._mainUdpSocket.ReceiveFrom(bytes, 0, 10, SocketFlags.None, ref _endPoint);
+			try
+			{
+				while (true)
+				{
+					List<Socket> readSockets = _managers.Select(manager => manager.ServerSocket).ToList();
 
-				Console.WriteLine(Encoding.ASCII.GetString(bytes,0,bytesRead));
+					Socket.Select(readSockets, null, null, int.MaxValue);
 
-				var client = new UdpClient((_udpManager.GetSocket((IPEndPoint)_endPoint)));
-
-				var clientThread = new Thread(HandleClientConnection);
-				clientThread.Start(client);
+					foreach (var rs in readSockets)
+					{
+						foreach (var manager in _managers)
+						{
+							if (rs == manager.ServerSocket)
+							{
+								ConnectInitializer(manager);
+							}
+						}
+					}
+				}
+			}
+			catch(Exception e)
+			{
+				Console.WriteLine(e.Message);
+				foreach (var manager in _managers)
+				{
+					manager.Stop();
+				}
 			}
 		}
+
+		private void ConnectInitializer(IManager manager)
+		{
+			Console.WriteLine(manager.ManagerType + "Initializer");
+
+			var clientThread = new Thread(HandleClientConnection);
+
+			clientThread.Start(manager.GetClient());
+		}
+
 
 		private void HandleClientConnection(object client)
 		{
 			Console.WriteLine("Start get a file!");
-			var _client = (UdpClient)client;
+			var _client = (IClient)client;
 			FileStream file = null;
 			byte[] message = new byte[4096];
 			int bytesRead;

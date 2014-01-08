@@ -4,10 +4,11 @@
 	using System.Net;
 	using System.Net.Sockets;
 
-	public class UdpManager
+	public class UdpManager: IManager
 	{
 		private readonly IPEndPoint _endPoint;
-		public Socket _mainUdpSocket;
+		private readonly Socket _mainUdpSocket;
+		private const string _managerType = "UDP";
 
 		public UdpManager(string ipAddress, int port)
 		{
@@ -22,8 +23,14 @@
 			_mainUdpSocket.Bind(_endPoint);
 		}
 
-		public Socket GetSocket(IPEndPoint remoteEndPoint)
+		public Socket GetSocket()
 		{
+			EndPoint endPoint = new IPEndPoint(0, 0);
+
+			byte[] bytes = new byte[10];
+
+			var bytesRead = _mainUdpSocket.ReceiveFrom(bytes, 0, 10, SocketFlags.None, ref endPoint);
+
 			Socket newSocket = new Socket(AddressFamily.InterNetwork, 
 				SocketType.Dgram, ProtocolType.Udp);
 
@@ -33,9 +40,9 @@
 
 			Console.WriteLine(newSocket.LocalEndPoint.ToString());
 
-			byte[] bytes = BitConverter.GetBytes(port);
+			byte[] portBytes = BitConverter.GetBytes(port);
 
-			_mainUdpSocket.SendTo(bytes, 0, bytes.Length, SocketFlags.None, remoteEndPoint);
+			_mainUdpSocket.SendTo(portBytes, 0, portBytes.Length, SocketFlags.None, endPoint);
 
 			return newSocket;
 		}
@@ -44,6 +51,21 @@
 		{
 			_mainUdpSocket.Close();
 			_mainUdpSocket.Shutdown(SocketShutdown.Both);
+		}
+
+		public Socket ServerSocket
+		{
+			get { return _mainUdpSocket; }
+		}
+
+		public IClient GetClient()
+		{
+			return new UdpClient(GetSocket());
+		}
+
+		public string ManagerType
+		{
+			get { return _managerType; }
 		}
 	}
 }

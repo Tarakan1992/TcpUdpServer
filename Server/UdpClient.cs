@@ -1,12 +1,11 @@
 ﻿namespace Server
 {
 	using System;
-	using System.Linq;
 	using System.Net;
 	using System.Net.Sockets;
 	using System.Text;
 
-	public class UdpClient
+	public class UdpClient: IClient
 	{
 		private readonly Socket _clientSocket;
 		private EndPoint _endPoint;
