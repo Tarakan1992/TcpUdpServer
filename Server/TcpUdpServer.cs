@@ -105,7 +105,7 @@
 			}
 
 			byte[] bytes = BitConverter.GetBytes(file.Length);
-
+			Console.WriteLine(file.Length);
 			if (!_client.Write(bytes, 0, bytes.Length))
 			{
 				_client.EndConnection();
@@ -118,13 +118,23 @@
 				
 				bytesRead = _client.Read(message, 0, message.Length);
 				
+				//Console.WriteLine(bytesRead);
+
 				if (bytesRead == 0)
 				{
 					break;
 				}
 
+				if (bytesRead == -1)
+				{
+					Console.WriteLine("oob");
+					byte[] download = Encoding.UTF8.GetBytes(file.Length.ToString());
+					_client.Write(download, 0, download.Length);
+					continue;
+				}
+
 				file.Write(message, 0, bytesRead);
-				Console.WriteLine(file.Length);
+				//Console.WriteLine(file.Length);
 			}
 
 			file.Close();

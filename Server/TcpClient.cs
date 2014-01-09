@@ -1,5 +1,6 @@
 ﻿namespace Server
 {
+	using System;
 	using System.Net.Sockets;
 
 	public class TcpClient: IClient
@@ -9,15 +10,33 @@
 		public TcpClient(Socket socket)
 		{
 			_clientSocket = socket;
-			_clientSocket.ReceiveTimeout = 5000;
+			_clientSocket.ReceiveTimeout = 2000;
 		}
 
 		public int Read(byte[] buffer, int offset, int count)
 		{
 			try
 			{
-				 var bytesRead = _clientSocket.Receive(buffer, offset,
+				var bytesRead = 0;
+				if (_clientSocket.Poll(1, SelectMode.SelectError))
+				{
+					Console.WriteLine("oob");
+					try
+					{
+						byte[] oobuf = new byte[1];
+						_clientSocket.Receive(oobuf, SocketFlags.OutOfBand);
+						return -1;
+					}
+					catch(Exception e)
+					{
+						Console.WriteLine(e.Message);
+						return 0;
+					}
+				}
+
+				bytesRead = _clientSocket.Receive(buffer, offset,
 						count, SocketFlags.None);
+
 				return bytesRead;
 			}
 			catch

@@ -15,7 +15,7 @@
 		{
 			_endPoint = new IPEndPoint(0,0);
 			_clientSocket = socket;
-			_clientSocket.ReceiveTimeout = 10000;
+			_clientSocket.ReceiveTimeout = 5000;
 		}
 
 		public int Read(byte[] buffer, int offset, int count)
@@ -41,6 +41,7 @@
 
 				if (tempBuffer[0] == _previousPocket)
 				{
+					Console.WriteLine("Like previous!");
 					continue;
 				}
 
